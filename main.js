@@ -95,63 +95,11 @@ class ServiceNowAdapter extends EventEmitter {
    * @param {ServiceNowAdapter~requestCallback} [callback] - The optional callback
    *   that handles the response.
    */
- /**
- * @memberof ServiceNowAdapter
- * @method healthcheck
- * @summary Check ServiceNow Health
- * @description Verifies external system is available and healthy.
- *   Calls method emitOnline if external system is available.
- *
- * @param {ServiceNowAdapter~requestCallback} [callback] - The optional callback
- *   that handles the response.
- */
-healthcheck(callback) {
- this.getRecord((result, error) => {
-   /**
-    * For this lab, complete the if else conditional
-    * statements that check if an error exists
-    * or the instance was hibernating. You must write
-    * the blocks for each branch.
-    */
-   if (error) {
-     /**
-      * Write this block.
-      * If an error was returned, we need to emit OFFLINE.
-      * Log the returned error using IAP's global log object
-      * at an error severity. In the log message, record
-      * this.id so an administrator will know which ServiceNow
-      * adapter instance wrote the log message in case more
-      * than one instance is configured.
-      * If an optional IAP callback function was passed to
-      * healthcheck(), execute it passing the error seen as an argument
-      * for the callback's errorMessage parameter.
-      */
-      log.error(`"External system is temporarily down for maintenance."${JSON.stringify(this.id)}`);
-      this.myCallback(error,result);
-      this.emitOffline();
-
-   } else {
-     /**
-      * Write this block.
-      * If no runtime problems were detected, emit ONLINE.
-      * Log an appropriate message using IAP's global log object
-      * at a debug severity.
-      * If an optional IAP callback function was passed to
-      * healthcheck(), execute it passing this function's result
-      * parameter as an argument for the callback function's
-      * responseData parameter.
-      */
-      this.myCallback(error,result);
-      this.emitOnline();
-   }
- });
-}
-myCallback = function(errorMessage, responseData) {
-  if (errorMessage)
-    console.log(errorMessage);
-  else
-    console.log(responseData);
-};
+  healthcheck(callback) {
+    // We will build this method in a later lab. For now, it will emulate
+    // a healthy integration by emmitting ONLINE.
+    this.emitOnline();
+  }
 
   /**
    * @memberof ServiceNowAdapter
@@ -210,8 +158,12 @@ myCallback = function(errorMessage, responseData) {
     if (error) {
       console.error(`\nError returned from GET request:\n${JSON.stringify(error)}`);
     }
+
     console.log(`\nResponse returned from GET request:\n${JSON.stringify(data)}`)
+    var jsonstring = JSON.parse(JSON.stringify(data));
+    return this.setResultsData(jsonstring);
   })
+  
   }
 
   /**
@@ -230,12 +182,34 @@ myCallback = function(errorMessage, responseData) {
      * Note how the object was instantiated in the constructor().
      * post() takes a callback function.
      */
-     connector.post( (data, error) => {
+     return this.connector.post( (data, error) => {
     if (error) {
       console.error(`\nError returned from POST request:\n${JSON.stringify(error)}`);
     }
     console.log(`\nResponse returned from POST request:\n${JSON.stringify(data)}`)
+     var jsonstring = JSON.parse(JSON.stringify(data));
+    var body=jsonstring.body;
+    var results=JSON.parse(body);
+    return results;
+    
   });
+  }
+  setResultsData(jsonstring){
+       
+    var body=jsonstring.body;
+    var results=JSON.parse(body);
+    var result={
+        "change_ticket_number":results['result'][0].number,
+            "active": results['result'][0].active,
+            "priority": results['result'][0].priority,
+        "description": results['result'][0].description,
+        "work_start": results['result'][0].work_start,
+        "work_end": results['result'][0].work_end,
+        "change_ticket_key": results['result'][0].sys_id
+
+    }
+    return result;
+    //console.log(result);
   }
 }
 
